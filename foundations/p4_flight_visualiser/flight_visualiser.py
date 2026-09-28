@@ -32,11 +32,16 @@ New Python concepts introduced in this build
 import matplotlib
 matplotlib.use("Agg")  # write straight to a file, no display needed
 import matplotlib.pyplot as plt
+from pathlib import Path
+
 import pandas as pd
 
-TELEMETRY_FILE = "Falcon9_Ascent_Telemetry_Cleaned.csv"
-SUMMARY_FILE = "Falcon9_Ascent_Summary.csv"
-OUTPUT_IMAGE = "Flight_Ascent_Profile.png"
+# Inputs are P3's outputs, read from P3's folder; the chart is saved here.
+HERE = Path(__file__).resolve().parent
+P3_DIR = HERE.parent / "p3_flight_data_analyser"
+TELEMETRY_FILE = P3_DIR / "Falcon9_Ascent_Telemetry_Cleaned.csv"
+SUMMARY_FILE = P3_DIR / "Falcon9_Ascent_Summary.csv"
+OUTPUT_IMAGE = HERE / "Flight_Ascent_Profile.png"
 
 
 def load_inputs():
@@ -45,7 +50,7 @@ def load_inputs():
         summary = pd.read_csv(SUMMARY_FILE).iloc[0]  # one-row file -> one Series
     except FileNotFoundError as e:
         raise FileNotFoundError(
-            f"{e.filename} not found -- run P3_Flight_Data_Analyser.py first, "
+            f"{e.filename} not found -- run ../p3_flight_data_analyser/flight_data_analyser.py first, "
             f"it produces both files this script needs."
         )
     return telemetry, summary
@@ -139,7 +144,7 @@ def main():
 
     fig = build_ascent_profile(telemetry, summary)
     fig.savefig(OUTPUT_IMAGE, dpi=150)
-    print(f"Saved: {OUTPUT_IMAGE}")
+    print(f"Saved: {OUTPUT_IMAGE.name}")
     print(
         f"Events plotted -- throttle-down: T+{summary['throttle_down_start_s']:.0f}s to "
         f"T+{summary['throttle_down_end_s']:.0f}s | max-Q: T+{summary['max_q_time_s']:.0f}s | "

@@ -38,11 +38,15 @@ reads right back with pd.read_csv(). Same file format both ways; the
 CSV *is* the interface between the two environments.
 """
 
+from pathlib import Path
+
 import pandas as pd
 
-TELEMETRY_FILE = "Falcon9_Ascent_Telemetry.csv"
-CLEANED_OUTPUT_FILE = "Falcon9_Ascent_Telemetry_Cleaned.csv"
-SUMMARY_OUTPUT_FILE = "Falcon9_Ascent_Summary.csv"
+# Paths resolve relative to this script, so it runs from any directory.
+HERE = Path(__file__).resolve().parent
+TELEMETRY_FILE = HERE / "Falcon9_Ascent_Telemetry.csv"
+CLEANED_OUTPUT_FILE = HERE / "Falcon9_Ascent_Telemetry_Cleaned.csv"
+SUMMARY_OUTPUT_FILE = HERE / "Falcon9_Ascent_Summary.csv"
 
 
 def load_telemetry(filepath):
@@ -156,7 +160,7 @@ def print_summary(summary):
 
 def main():
     df = load_telemetry(TELEMETRY_FILE)
-    print(f"Loaded {len(df)} telemetry rows from {TELEMETRY_FILE}\n")
+    print(f"Loaded {len(df)} telemetry rows from {TELEMETRY_FILE.name}\n")
 
     df = clean_telemetry(df)
     df = smooth_acceleration(df)
@@ -166,8 +170,8 @@ def main():
 
     df.to_csv(CLEANED_OUTPUT_FILE, index=False)
     pd.DataFrame([summary]).to_csv(SUMMARY_OUTPUT_FILE, index=False)
-    print(f"Cleaned telemetry written to: {CLEANED_OUTPUT_FILE}")
-    print(f"Summary written to:           {SUMMARY_OUTPUT_FILE}")
+    print(f"Cleaned telemetry written to: {CLEANED_OUTPUT_FILE.name}")
+    print(f"Summary written to:           {SUMMARY_OUTPUT_FILE.name}")
     print("\nBoth are plain CSVs -- MATLAB can load either with readtable()")
     print("or readmatrix() with no conversion step.")
 

@@ -39,6 +39,8 @@ New concepts introduced in this build
     - Feature importance          : which sensors the model actually relies on
 """
 
+from pathlib import Path
+
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -51,8 +53,10 @@ from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-DATA_FILE = "Merlin_Engine_Test_Data.csv"
-PREDICTIONS_OUTPUT = "Engine_Health_Predictions.csv"
+# Paths resolve relative to this script, so it runs from any directory.
+HERE = Path(__file__).resolve().parent
+DATA_FILE = HERE / "Merlin_Engine_Test_Data.csv"
+PREDICTIONS_OUTPUT = HERE / "Engine_Health_Predictions.csv"
 
 FEATURE_COLUMNS = [
     "chamber_pressure_bar",
@@ -259,7 +263,7 @@ def main():
     results["predicted"] = predictions
     results["correct"] = results["actual"] == results["predicted"]
     results.to_csv(PREDICTIONS_OUTPUT, index=False)
-    print(f"Test-set predictions written to: {PREDICTIONS_OUTPUT}")
+    print(f"Test-set predictions written to: {PREDICTIONS_OUTPUT.name}")
     print("Plain CSV -- MATLAB reads it with readtable(), same bridge as P3.")
 
 
