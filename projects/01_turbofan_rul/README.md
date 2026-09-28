@@ -3,7 +3,7 @@
 Predicting how many operating cycles a turbofan engine has left before
 failure, using NASA's C-MAPSS run-to-failure dataset.
 
-**Status:** in progress — Phase C1 (data loading and RUL labelling) complete.
+**Status:** in progress — Phases C1 (data loading and RUL labelling) and C2 (feature engineering) complete.
 
 ---
 
