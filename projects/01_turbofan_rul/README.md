@@ -100,10 +100,80 @@ python tests/test_data_loader.py
 Covers column parsing, RUL derivation for training and truncated test
 data, the cap, and constant-sensor detection.
 
+## FD001 at a glance
+
+Verified against the real dataset:
+
+| | Train | Test |
+|---|---|---|
+| Rows | 20,631 | 13,096 |
+| Engines | 100 | 100 |
+| Cycles per engine (min / median / max) | 128 / 199 / 362 | 31 / 133 / 303 |
+
+Ground-truth test RUL ranges from 7 to 145 cycles.
+
+**Six sensors are perfectly constant** on FD001 and carry zero information:
+`sensor_1`, `sensor_5`, `sensor_10`, `sensor_16`, `sensor_18`, `sensor_19`.
+A seventh, `sensor_6`, takes only two distinct values across all 20,631 rows
+and is effectively dead weight too. `op_setting_3` is likewise constant —
+expected, since FD001 has a single operating condition.
+
+Dropping these is handled in C2 rather than hardcoded, so the same pipeline
+works on FD002/FD004 where different sensors vary.
+
+## Feature engineering (C2)
+
+A single sensor reading says little about remaining life. A reading of 47.2
+could be healthy or nearly dead depending on where that engine *started* and
+which direction it has been moving — C-MAPSS engines each begin with
+different, unknown initial wear. Degradation is a trajectory, not a value.
+
+**Sensor selection** applies three filters, fitted on training data only:
+
+| Filter | Dropped on FD001 |
+|---|---|
+| Zero variance | `sensor_1, 5, 10, 16, 18, 19` |
+| Fewer than 10 distinct values | `sensor_6` |
+| \|correlation with RUL\| < 0.10 | none |
+
+`sensor_6` is the interesting one: it has non-zero standard deviation but
+takes only **two** distinct values across all 20,631 rows (21.60 / 21.61).
+A variance-based filter keeps it; a distinct-value filter drops it.
+`op_setting_3` is likewise constant, as expected for a single-condition
+subset. Filters are empirical rather than hardcoded, so the same pipeline
+works on FD002/FD004 where different sensors carry signal.
+
+**Features built** — 116 total, per engine:
+
+- Rolling mean, standard deviation, and trend slope over 5- and 20-cycle
+  windows. Two window sizes so the model can weigh responsiveness against
+  stability itself.
+- Deviation from each engine's own baseline (mean of its first 20 cycles),
+  making readings comparable across a fleet with varying initial wear.
+- Cycle count.
+
+**Result:** the strongest engineered feature reaches |r| = 0.819 with RUL
+versus 0.775 for the best raw sensor, and all of the top 15 features by
+correlation are engineered rather than raw.
+
+### Leakage guards
+
+Two failure modes here produce plausible-looking numbers and a useless
+model, so both are tested explicitly in `tests/test_features.py`:
+
+- **Cross-engine leakage** — rolling windows are computed within
+  `unit_number`, never across the boundary between two engines.
+- **Future information** — every window looks strictly backward. A centred
+  window would average in future cycles that would not exist at prediction
+  time in service.
+
+Total engine lifetime is deliberately excluded from all features: it is
+only knowable after failure, so using it would leak the answer directly.
+
 ## Roadmap
 
-- [x] **C1** — Data loading, RUL labelling, format verification
-- [ ] **C2** — Feature engineering: rolling statistics, trend slopes, sensor selection
+- [x] **C1** — Data loading, RUL labelling, format verification *(validated on real FD001)*
+- [x] **C2** — Feature engineering: rolling statistics, trend slopes, sensor selection
 - [ ] **C3** — Baseline models (random forest / gradient boosting) + NASA scoring function
 - [ ] **C4** — LSTM sequence model *(scope decision pending C3 results)*
 - [ ] **C5** — Results write-up and comparison against published benchmarks
