@@ -42,8 +42,8 @@ aerospace-ml/
 Requires **Python 3.11**.
 
 ```bash
-git clone https://github.com/<your-username>/aerospace-ml.git
-cd aerospace-ml
+git clone https://github.com/markabena/Aerospace-ML.git
+cd Aerospace-ML
 python -m venv .venv
 # Windows: .venv\Scripts\activate    macOS/Linux: source .venv/bin/activate
 pip install -r requirements.txt
