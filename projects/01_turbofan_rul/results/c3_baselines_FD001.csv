@@ -1,0 +1,5 @@
+model,cv_rmse,cv_rmse_std,cv_rmse_truncated,test_rmse,test_rmse_capped_truth,test_mae,test_nasa_score,test_late_pct
+Mean predictor,41.673,0.003,40.783,43.067,41.942,35.900,33629.231,50.000
+Ridge regression,16.535,0.428,18.961,17.464,16.213,14.010,460.838,54.000
+Random forest,12.007,0.508,13.132,13.063,11.703,9.608,223.164,58.000
+Gradient boosting,10.581,0.509,11.015,12.884,11.736,9.329,223.942,48.000
