@@ -3,7 +3,7 @@
 Predicting how many operating cycles a turbofan engine has left before
 failure, using NASA's C-MAPSS run-to-failure dataset.
 
-**Status:** in progress — Phases C1 (data loading and RUL labelling), C2 (feature engineering) and C3 (baseline models) complete.
+**Status:** in progress — Phases C1 (data loading and RUL labelling), C2 (feature engineering), C3 (baseline models) and C4 (LSTM) complete.
 
 ---
 
@@ -74,12 +74,15 @@ disable it and compare.
 │   ├── features.py         # sensor selection + engineered features (C2)
 │   ├── build_dataset.py    # raw files -> feature CSVs
 │   ├── metrics.py          # RMSE + NASA asymmetric score (C3)
-│   └── train_baselines.py  # grouped CV + test evaluation (C3)
+│   ├── train_baselines.py  # grouped CV + test evaluation (C3)
+│   ├── sequences.py        # windowing + train-only scaling (C4)
+│   └── train_lstm.py       # LSTM, multi-seed, early stopping (C4)
 ├── tests/
 │   ├── make_mock_data.py   # generates format-accurate mock files
 │   ├── test_data_loader.py
 │   ├── test_features.py
-│   └── test_metrics.py
+│   ├── test_metrics.py
+│   └── test_sequences.py
 ├── results/              # C3 scores, per-engine predictions, plots
 └── requirements.txt
 ```
@@ -251,12 +254,83 @@ For reference, published deep models on FD001 report test RMSE around
 the same range. Protocols vary between papers (cap value, how truth is
 capped, window lengths), so treat this as a sanity check, not a ranking.
 
+## LSTM sequence model (C4)
+
+```bash
+pip install torch
+python -m src.train_lstm         # 5 seeds, ~11 min on a 2-core CPU
+```
+
+### Setup
+
+- **Input:** the last 30 cycles of the 14 sensors kept in C2, min-max scaled
+  with training statistics only. 30 is the longest window that fits the
+  shortest test engine (31 cycles) without padding.
+- **Model:** 2-layer LSTM (64 units, dropout 0.2), then a small dense head
+  that reads the final time step. Trained on RUL / 125 with MSE loss and Adam.
+- **Validation:** 20 of the 100 training engines are held out for early
+  stopping (patience 10, max 80 epochs). The split is by engine.
+- **Five seeds.** A single neural-net run can be lucky or unlucky, so the
+  table reports the spread across seeds, plus an ensemble that averages
+  their predictions.
+- Hyperparameters were fixed before training and not tuned.
+
+### Results (FD001, 100 test engines)
+
+| Model | Test RMSE | NASA score | Late predictions |
+|---|---|---|---|
+| LSTM, single seed (mean ± std of 5) | 14.85 ± 0.23 | 392 ± 47 | 64% |
+| LSTM, 5-seed ensemble | 14.70 | 378 | 68% |
+| **Gradient boosting (C3)** | **12.88** | **224** | **48%** |
+
+| True RUL | LSTM ensemble | Gradient boosting |
+|---|---|---|
+| ≤ 50 cycles | 4.8 | **3.3** |
+| 50–100 | 19.3 | **12.7** |
+| > 100 | **15.7** | 18.1 |
+
+![LSTM vs gradient boosting](results/c4_lstm_vs_gb_FD001.png)
+
+### Verdict: the LSTM does not earn its place on FD001
+
+It is 1.8 cycles worse on RMSE and about 70% worse on NASA score than the C3
+gradient-boosting baseline. It also leans late: 68% of its calls give the
+engine more life than it has, which is the costly direction.
+
+This was visible before the test set was touched. On the same 20 validation
+engines, scored on the same 3,661 windows, gradient boosting reaches RMSE 10.9
+against the LSTM's 13.4.
+
+**Why, most likely: the LSTM can't see what gradient boosting found most
+useful.** A 30-cycle window has no idea how old the engine is or where its
+sensors started. Two of gradient boosting's strongest inputs are exactly
+those: drift from the engine's own first 20 cycles (`sensor_11_dev_from_baseline`,
+rank 2) and cycle count. The LSTM is not overfitting either: training and
+validation error flatten out together (below), so it is short of
+information, not regularisation.
+
+![Training curves](results/c4_training_curves_FD001.png)
+
+The run-to-run spread is small (± 0.23 RMSE), so the gap to gradient boosting
+is not seed noise. The LSTM's one edge is on healthy engines (> 100 cycles),
+where it under-predicts less, but that region matters least for maintenance.
+
+### What would test the hypothesis
+
+Give the sequence model the same information as the tree model (cycle count
+and per-engine baseline deviation as extra input channels, or longer
+windows with padding) and compare on the validation engines first. If it
+still can't beat 10.9 there, gradient boosting stays the model of record for
+FD001, and sequence models get re-tested on FD002/FD004, where six
+operating conditions make raw trajectories harder to hand-engineer.
+
 ## Roadmap
 
 - [x] **C1** — Data loading, RUL labelling, format verification *(validated on real FD001)*
 - [x] **C2** — Feature engineering: rolling statistics, trend slopes, sensor selection
 - [x] **C3** — Baseline models (random forest / gradient boosting) + NASA scoring function *(GB test RMSE 12.9)*
-- [ ] **C4** — LSTM sequence model *(scope decision pending C3 results)*
+- [x] **C4** — LSTM sequence model *(test RMSE 14.7, does not beat C3; see verdict)*
+- [ ] **C4b** — LSTM with age + baseline-drift channels, judged on validation engines first
 - [ ] **C5** — Results write-up and comparison against published benchmarks
 
 ## Citation

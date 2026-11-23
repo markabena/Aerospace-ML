@@ -16,7 +16,7 @@ Every project here follows the same rules:
 
 ## Flagship: Turbofan Remaining Useful Life Prediction
 
-**[`projects/01_turbofan_rul`](projects/01_turbofan_rul/)** · NASA C-MAPSS · 🔵 In progress (phases C1–C3 of 5 complete)
+**[`projects/01_turbofan_rul`](projects/01_turbofan_rul/)** · NASA C-MAPSS · 🔵 In progress (phases C1–C4 complete)
 
 This project predicts how many cycles an aircraft engine has left before failure, using run-to-failure sensor data. Errors are not symmetric: over-predicting remaining life keeps a failing engine in service. The evaluation is built around that.
 
@@ -29,7 +29,9 @@ Work so far:
 - **Leakage tests** that prove no rolling window crosses between engines or looks forward in time.
 - **Baseline models (C3)**: gradient boosting reaches **test RMSE 12.9 cycles** and a NASA score of 224 on FD001's 100 test engines. For engines within 50 cycles of failure, the error drops to **3.3 cycles**. Models were chosen with engine-grouped cross-validation, and the test set was scored once.
 
-Next: an LSTM sequence model (C4), which has to beat these baselines to earn its place.
+- **LSTM sequence model (C4)**: five seeds, early-stopped on held-out engines. It reached test RMSE 14.7, so it **does not beat** gradient boosting on FD001, and the gap was already visible on validation data. The likely cause is that a 30-cycle window can't see engine age or baseline drift, two of the tree model's strongest inputs.
+
+Next: give the LSTM those inputs and judge it on validation engines (C4b), then move to the harder FD002–FD004 subsets.
 
 ---
 

@@ -9,7 +9,7 @@ PROJECTS = Path(__file__).resolve().parents[1] / "projects"
 TURBOFAN = PROJECTS / "01_turbofan_rul"
 
 
-@pytest.mark.parametrize("script", ["test_data_loader.py", "test_features.py", "test_metrics.py"])
+@pytest.mark.parametrize("script", ["test_data_loader.py", "test_features.py", "test_metrics.py", "test_sequences.py"])
 def test_turbofan_suite(script):
     subprocess.run([sys.executable, "tests/make_mock_data.py"], cwd=TURBOFAN,
                    check=True, capture_output=True)
