@@ -11,3 +11,4 @@ What each build taught, covering the Python, the ML and the engineering lesson. 
 | P5 · Engine Health Monitor | Train/test split, pipelines, scaling, random forest, precision/recall, CV | With 85/15 class balance, accuracy is misleading; track missed failures |
 | C1 · Turbofan data | Headerless file parsing, label derivation, mock-data testing | The RUL cap is a modelling decision, not a data fact |
 | C2 · Turbofan features | Grouped rolling windows, trend slopes, correlation filters | Test explicitly for cross-engine and future-information leakage |
+| C3 · Turbofan baselines | GroupKFold, Ridge, random forest, gradient boosting, custom asymmetric metric | Split by engine, not by row, and touch the test set once; check accuracy where it matters (near failure), not just on average |
