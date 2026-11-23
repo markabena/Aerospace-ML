@@ -1,0 +1,9 @@
+model,best_epoch,val_rmse,test_rmse,test_mae,test_nasa_score,test_late_pct,test_rmse_std,test_nasa_std
+LSTM seed 0,54.000,13.611,15.248,11.153,470.693,65.000,,
+LSTM seed 1,76.000,13.462,14.688,10.865,389.740,64.000,,
+LSTM seed 2,74.000,13.405,14.748,11.290,359.391,67.000,,
+LSTM seed 3,36.000,13.747,14.823,11.206,353.646,59.000,,
+LSTM seed 4,62.000,13.368,14.740,10.968,385.660,66.000,,
+"LSTM, mean of seeds",,,14.850,,391.826,,0.228,46.830
+LSTM ensemble,,,14.704,10.948,378.104,68.000,,
+Gradient boosting (C3),,,12.884,,223.900,,,
